@@ -7,7 +7,7 @@
 typedef void* Hash;
 
 /*Inicia uma tabela Hash extensível*/
-Hash hashStart();
+Hash hashCreate();
 
 /*Adiciona um arquivo para a hash table e retorna a chave do arquivo inserido*/
 int hashAdd(Hash h, FILE *file);
@@ -28,6 +28,6 @@ int hashGetSize(Hash h);
 void hashPrint(Hash h);
 
 /*Finaliza uma tabela Hash extensível*/
-void hashEnd(Hash h);
+void hashDestroy(Hash h);
 
 #endif
