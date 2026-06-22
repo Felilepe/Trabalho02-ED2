@@ -27,6 +27,8 @@ int hashGetSize(Hash h);
 /*Recebe uma hash table e imprime todos os seus itens*/
 void hashPrint(Hash h);
 
+void hashForEach(Hash h, void (*aux)(void* item, void* aux_data), void* aux_data);
+
 /*Finaliza uma tabela Hash extensível*/
 void hashDestroy(Hash h);
 
