@@ -16,7 +16,7 @@ Node graphGetNode(Graph g, int n);
 
 int graphGetSize(Graph g);
 
-bool graphNodeExists(Graph g, Node 
+bool graphNodeExists(Graph g, Node n);
 
 void graphForEach(Graph h, void (*aux)(void* item, void* aux_data), void* aux_data);
 
