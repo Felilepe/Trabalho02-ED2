@@ -2,6 +2,7 @@
 #define GRAPH_H
 
 #include <stdbool.h>
+#include "lista.h"
 
 typedef void* Graph;
 typedef void* Data;
@@ -14,7 +15,7 @@ Graph graphCreate(int n, int flag);
 /*Recebe um Grafo e um Data e insere Data no Grafo, retornando booleano*/
 bool graphAddVertex(Graph g, Data d, const char* id);
 
-bool graphConnectVertex(Graph g, Data d, const char* source_id, const char* target_id, char *rua);
+bool graphConnectVertex(Graph g, Data d, double weight, const char* source_id, const char* target_id, char *label);
 
 bool graphIsAdjacent(Graph g, const char* source, const char* target);
 
@@ -30,13 +31,16 @@ int graphGetEdgeCount(Graph g);
 
 Data graphGetVertexData(Graph g, const char* id);
 
-Edge graphGetEdgeData(Graph g, const char* source_id, const char* target_id);
+Data graphGetEdgeData(Graph g, const char* source_id, const char* target_id);
 
-/*Lista graphGetNeighbors*/
+double graphGetEdgeWeight(Graph g, const char* source_id, const char* target_id);
+
+Lista graphGetNeighbors(Graph g, const char* id);
 
 
 
 void graphSetVertexCount(Graph g, int n);
+bool graphSetEdgeWeight(Graph g, const char* source_id, const char* target_id, double peso);
 
 
 
@@ -51,9 +55,9 @@ bool graphDataExists(Graph g, Data n);
 
 void graphForEach(Graph h, void (*aux)(void* item, void* aux_data), void* aux_data);
 
-/*Lista graphExecuteDijkstra*/
+Lista graphExecuteDijkstra(Graph g, bool use_time, const char* source_id, const char* end_id, double *cost);
 
-/*Lista graphExecuteTarjan*/
+Lista graphExecuteTarjan(Graph g, bool (*edge_filter)(void *edge_data, void *context), void* context);
 
 
 
