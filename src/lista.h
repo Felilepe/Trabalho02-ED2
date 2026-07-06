@@ -91,7 +91,6 @@ void lista_insertTail(Lista *l, item i);
 /**********************************************************************************
 *@brief Remove e retorna o item do início da lista.
 *@param l Ponteiro para a lista.
-*@return Retorna o ponteiro para o item (void*) removido.
 *@note Apenas libera o nó da lista, não o dado 'item'.
 *@note Causa 'exit(1)' se a lista estiver vazia.
 **********************************************************************************/
@@ -100,7 +99,6 @@ void lista_removeHead(Lista *l);
 /**********************************************************************************
 *@brief Remove e retorna o item do fim da lista.
 *@param l Ponteiro para a lista.
-*@return Retorna o ponteiro para o item (void*) removido.
 *@note Apenas libera o nó da lista, não o dado 'item'.
 *@note Causa 'exit(1)' se a lista estiver vazia.
 **********************************************************************************/
