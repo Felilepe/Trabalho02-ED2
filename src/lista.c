@@ -36,7 +36,7 @@ bool lista_isEmpty(Lista *l)
 {
     if(l == NULL){
         printf("Erro: tentativa de acesso a lista nula em lista_isEmpty");
-        return 2;
+        return true;
     }
     return l->size == 0;
 }
