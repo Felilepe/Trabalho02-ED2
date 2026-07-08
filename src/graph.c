@@ -358,3 +358,34 @@ bool graphSetVertexAxisY(Graph g, const char* id, double y)
     if(v -> y == y) return true;
     return false;
 }
+
+
+
+bool graphRemoveVertex(Graph g, const char* id)
+{
+    graph* gc = (graph*)g;
+    if(gc == NULL){
+        printf("Erro: ponteiro de grafo nulo em graphRemoveVertex\n");
+        return false;
+    }
+
+    hashRemove(gc -> vertices, id);
+    return !hashExists(gc -> vertices, id);
+}
+
+bool graphRemoveEdge(Graph g, const char* source_id, const char* target_id)
+{
+    vertex *v = graphGetVertex(g, source_id);
+    if(v == NULL){
+        printf("Erro: vertice nula em graphRemoveEdge");
+        return false;
+    }
+    for(int i = 0; i < lista_getSize(v -> adjacent_vertices); i++){
+        edge *e = lista_getItem(v ->adjacent_vertices, i);
+        if(e -> source_id == source_id && e -> target_id == target_id){
+            lista_removeNode(v ->adjacent_vertices, i);
+            return true;
+        }
+    }
+    return false;
+}
