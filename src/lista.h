@@ -96,6 +96,17 @@ void lista_insertTail(Lista *l, item i);
 **********************************************************************************/
 void lista_removeHead(Lista *l);
 
+
+/**********************************************************************************
+*@brief Verfica se um item i está na lista.
+*@param l Ponteiro para a lista.
+*@param i item a ser procurado
+*@return Verdadeiro(1) se for encontrado, falso(0) caso contrário
+*@note Apenas libera o nó da lista, não o dado 'item'.
+*@note Causa 'exit(1)' se a lista estiver vazia.
+**********************************************************************************/
+bool lista_Exists(Lista *l, item i, bool (*igual)(item a, item b));
+
 /**********************************************************************************
 *@brief Remove e retorna o item do fim da lista.
 *@param l Ponteiro para a lista.

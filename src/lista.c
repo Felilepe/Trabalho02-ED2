@@ -18,6 +18,7 @@ struct lista {
 };
 
 
+
 Lista *lista_create()
 {
     Lista *l = (Lista*)malloc(sizeof(Lista));
@@ -262,4 +263,27 @@ void lista_removeTail(Lista *l)
     free(nodeRemover);
 }
 
+bool lista_Exists(Lista *l, item i, bool (*igual)(item a, item b))
+{
+    if (l == NULL || lista_isEmpty(l)) {
+        return false;
+    }
+
+    NodeL *atual = l->head;
+    while (atual != NULL) {
+        if (igual != NULL) {
+            if (igual(atual->data, i)) {
+                return true;
+            }
+        } 
+        else {
+            if (atual->data == i) {
+                return true;
+            }
+        }
+        atual = atual->next;
+    }
+
+    return false;
+}
 
