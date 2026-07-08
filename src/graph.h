@@ -9,7 +9,7 @@ typedef void* Data;
 typedef void* Vertex;
 typedef void* Edge;
 
-/*Recebe uma tamanho e uma flag e retorna ponteiro para Grafo*/
+/*Recebe uma tamanho e retorna ponteiro para Grafo*/
 Graph graphCreate(int n);
 
 /*Recebe um Grafo e um Data e insere Data no Grafo, retornando booleano*/
@@ -17,7 +17,7 @@ bool graphAddVertex(Graph g, Data d, const char* id);
 
 bool graphConnectVertices(Graph g, Data d, double weight, const char* source_id, const char* target_id, const char *label);
 
-bool graphIsAdjacent(Graph g, const char* source, const char* target);
+bool graphIsAdjacent(Graph g, const char* source_id, const char* target_id);
 
 
 
@@ -35,17 +35,17 @@ Data graphGetEdgeData(Graph g, const char* source_id, const char* target_id);
 
 double graphGetEdgeWeight(Graph g, const char* source_id, const char* target_id);
 
-Lista *graphGetNeighbors(Graph g, const char* id);
+Lista *graphGetVertexNeighbors(Graph g, const char* id);
 
 
 
-bool graphSetVertexCount(Graph g, int n);
+bool graphSetVertexMaxCount(Graph g, int n);
 
 bool graphSetEdgeWeight(Graph g, const char* source_id, const char* target_id, double peso);
 
-bool graphSetVertexAxisX (Vertex v, double x);
+bool graphSetVertexAxisX (Graph g, const char* id, double x);
 
-bool graphSetVertexAxisY(Vertex v, double y);
+bool graphSetVertexAxisY(Graph g, const char* id, double y);
 
 
 
