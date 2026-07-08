@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "graph.h"
 #include "lista.h"
 #include "hte.h"
@@ -31,6 +32,68 @@ typedef struct graph
 
 
 
+static Vertex vertexCreate(double x, double y, const char* id, Data data)
+{
+    vertex *v = malloc(sizeof(vertex));
+    if(v == NULL){
+        printf("Erro: Falha na alocação de memória ao criar vértice");
+        return NULL;
+    }
+
+    v ->adjacent_vertices = lista_create();
+    v -> data = data;
+    v -> id = NULL;
+    v -> x = x;
+    v -> y = y;
+
+    v -> id = (char*)malloc(strlen(id) + 1);
+    if(v -> id == NULL){
+        printf("Erro: Falha ao atribuir id a vertice criada");
+    }
+    strcpy(v -> id, id);
+
+    return v;
+}
+
+static void vertexDestroy(Vertex v)
+{
+    vertex *vc = (vertex*)v;
+    free(vc -> id);
+    lista_destroy(vc ->adjacent_vertices);
+    free(vc);
+}
+
+static Edge edgeCreate(double weight, const char* source_id, const char* target_id, Data data, char* label)
+{
+    edge *e = malloc(sizeof(edge));
+    if(e == NULL){
+        printf("Erro: falha ao alocar memoria para nova aresta");
+        return NULL;
+    }
+
+    e -> data = data;
+    e -> weight = weight;
+    e -> source_id = (char*)malloc(strlen(source_id) + 1);
+    if(e -> source_id == NULL){
+        printf("Erro: Falha ao atribuir source_id a aresta criada");
+    }
+    strcpy(e -> source_id, source_id);
+    e -> target_id = (char*)malloc(strlen(target_id) + 1);
+    if(e -> target_id == NULL){
+        printf("Erro: Falha ao atribuir target_id a aresta criada");
+    }
+    strcpy(e -> target_id, target_id);
+    e -> label = (char*)malloc(strlen(label) + 1);
+    if(e -> label == NULL){
+        printf("Erro: Falha ao atribuir label a aresta criada");
+    }
+    strcpy(e -> label, label);
+
+    return e;
+}
+
+
+
 Graph graphCreate(int n)
 {
     graph *g = malloc(sizeof(graph));
@@ -49,4 +112,55 @@ Graph graphCreate(int n)
 
 
 
+bool graphAddVertex(Graph g, Data d, const char* id)
+{
+    graph *gc = (graph*)g;
+    if(gc == NULL){
+        printf("Erro: Ponteiro de grafo NULL em graphAddVertex");
+        return false;
+    }
+    if(id == NULL){
+        printf("Erro: id nulo em graphAddVertex");
+        return false;
+    }
 
+    Vertex v = vertexCreate(0.0, 0.0, id, d);
+
+    hashAdd(gc -> vertices, v, id);
+
+    if(hashExists(gc -> vertices, id)){
+        return true;
+    }
+
+    vertexDestroy(v);
+    return false;
+}
+
+bool graphConnectVertices(Graph g, Data d, double weight, const char* source_id, const char* target_id, const char *label)
+{
+    graph *gc = (graph*)g;
+    if(gc == NULL){
+        printf("Erro: pointeiro para grafo nulo em graphConnectVertices");
+        return false;
+    }
+    if(source_id == NULL || target_id == NULL){
+        printf("Erro: id de uma das vertices eh nulo em graphConnectVertices");
+        return false;
+    }
+
+    vertex *source = hashGetData(gc -> vertices, source_id);
+    vertex *target = hashGetData(gc -> vertices, target_id);
+    if(source == NULL || target == NULL){
+        printf("Erro: umas das vertices eh nula em graphConnectVertices");
+        return false;
+    }
+
+    Edge e = edgeCreate(weight, source_id, target_id, d, label);
+    if(e == NULL){
+        printf("Erro: falha ao criar aresta nova em graphConnectvertices");
+        return false;
+    }
+
+    lista_insertTail(source -> adjacent_vertices, e);
+    return true;
+}
