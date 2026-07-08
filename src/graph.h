@@ -15,7 +15,7 @@ Graph graphCreate(int n);
 /*Recebe um Grafo e um Data e insere Data no Grafo, retornando booleano*/
 bool graphAddVertex(Graph g, Data d, const char* id);
 
-bool graphConnectVertex(Graph g, Data d, double weight, const char* source_id, const char* target_id, const char *label);
+bool graphConnectVertices(Graph g, Data d, double weight, const char* source_id, const char* target_id, const char *label);
 
 bool graphIsAdjacent(Graph g, const char* source, const char* target);
 
@@ -39,9 +39,13 @@ Lista *graphGetNeighbors(Graph g, const char* id);
 
 
 
-void graphSetVertexCount(Graph g, int n);
+bool graphSetVertexCount(Graph g, int n);
 
 bool graphSetEdgeWeight(Graph g, const char* source_id, const char* target_id, double peso);
+
+bool graphSetVertexAxisX (Vertex v, double x);
+
+bool graphSetVertexAxisY(Vertex v, double y);
 
 
 
