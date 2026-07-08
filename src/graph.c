@@ -188,6 +188,10 @@ bool graphIsAdjacent(Graph g, const char* source_id, const char* target_id)
 Vertex graphGetVertex(Graph g, const char* id)
 {
     graph *gc = (graph*)g;
+    if(gc == NULL){
+        printf("Erro: ponteiro de grafo nulo em graphGetVertex\n");
+        return -1;
+    }
 
     return hashGetData(gc -> vertices, id);
 }
@@ -202,6 +206,7 @@ Edge graphGetEdge(Graph g, const char* source_id, const char* target_id)
 
     vertex *source = hashGetData(gc->vertices, source_id);
     if (source == NULL) {
+        printf("Erro: vertice nula em graphGetEdge");
         return NULL; 
     }
 
@@ -218,3 +223,85 @@ Edge graphGetEdge(Graph g, const char* source_id, const char* target_id)
     return NULL;
 }
 
+int graphGetVertexCount(Graph g)
+{
+    graph* gc = (graph*)g;
+    if(gc == NULL){
+        printf("Erro: ponteiro de grafo nulo em graphGetVertexCount\n");
+        return -1;
+    }
+    return gc -> vertice_count;
+}
+
+int graphGetEdgeCount(Graph g)
+{
+    graph* gc = (graph*)g;
+    if(gc == NULL){
+        printf("Erro: ponteiro de grafo nulo em graphGetEdgeCount\n");
+        return -1;
+    }
+    return gc -> edge_count;   
+}
+
+Data graphGetVertexData(Graph g, const char* id)
+{
+    graph* gc = (graph*)g;
+    if(gc == NULL){
+        printf("Erro: ponteiro de grafo nulo em graphGetVertexData\n");
+        return NULL;
+    }
+    vertex *v = hashGetData(gc -> vertices, id);
+    if(v == NULL)
+    return v -> data;
+}
+
+Data graphGetEdgeData(Graph g, const char* source_id, const char* target_id)
+{
+    graph *gc = (graph*)g;
+    if(gc == NULL){
+        printf("Erro: ponteiro de grafo nulo em graphGetEdgeData\n");
+        return NULL;
+    }
+
+    edge* e = graphGetEdge(g, source_id, target_id);
+    if(e == NULL){
+        printf("Erro: falha ao pegar aresta em graphGetEdgeData");
+        return NULL;
+    }
+    
+    return e -> data;
+}
+
+double graphGetEdgeWeight(Graph g, const char* source_id, const char* target_id)
+{
+    graph *gc = (graph*)g;
+    if(gc == NULL){
+        printf("Erro: ponteiro de grafo nulo em graphGetEdgeWeight\n");
+        return -1;
+    }
+
+    edge* e = graphGetEdge(g, source_id, target_id);
+    if(e == NULL){
+        printf("Erro: falha ao pegar aresta em graphGetEdgeWeight");
+        return -1;
+    }
+    
+    return e -> weight;
+}
+
+Lista *graphGetVertexNeighbors(Graph g, const char* id)
+{
+    graph *gc = (graph*)g;
+    if(gc == NULL){
+        printf("Erro: ponteiro de grafo nulo em graphGetVertexNeighbors\n");
+        return NULL;
+    }
+    
+    vertex *source = hashGetData(gc->vertices, id);
+    if (source == NULL) {
+        printf("Erro: vertice nula em graphVertexNeighbors");
+        return NULL; 
+    }
+
+    return source -> adjacent_vertices;
+}
