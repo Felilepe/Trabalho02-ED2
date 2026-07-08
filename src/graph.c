@@ -67,7 +67,7 @@ static Edge edgeCreate(double weight, const char* source_id, const char* target_
 {
     edge *e = malloc(sizeof(edge));
     if(e == NULL){
-        printf("Erro: falha ao alocar memoria para nova aresta");
+        printf("Erro: falha ao alocar memoria para nova aresta\n");
         return NULL;
     }
 
@@ -75,17 +75,17 @@ static Edge edgeCreate(double weight, const char* source_id, const char* target_
     e -> weight = weight;
     e -> source_id = (char*)malloc(strlen(source_id) + 1);
     if(e -> source_id == NULL){
-        printf("Erro: Falha ao atribuir source_id a aresta criada");
+        printf("Erro: Falha ao atribuir source_id a aresta criada\n");
     }
     strcpy(e -> source_id, source_id);
     e -> target_id = (char*)malloc(strlen(target_id) + 1);
     if(e -> target_id == NULL){
-        printf("Erro: Falha ao atribuir target_id a aresta criada");
+        printf("Erro: Falha ao atribuir target_id a aresta criada\n");
     }
     strcpy(e -> target_id, target_id);
     e -> label = (char*)malloc(strlen(label) + 1);
     if(e -> label == NULL){
-        printf("Erro: Falha ao atribuir label a aresta criada");
+        printf("Erro: Falha ao atribuir label a aresta criada\n");
     }
     strcpy(e -> label, label);
 
@@ -98,7 +98,7 @@ Graph graphCreate(int n)
 {
     graph *g = malloc(sizeof(graph));
     if(g == NULL){
-        printf("Erro: Falha na alocação de memória em graphCreate");
+        printf("Erro: Falha na alocação de memória em graphCreate\n");
         return NULL;
     }
     
@@ -116,11 +116,11 @@ bool graphAddVertex(Graph g, Data d, const char* id)
 {
     graph *gc = (graph*)g;
     if(gc == NULL){
-        printf("Erro: Ponteiro de grafo NULL em graphAddVertex");
+        printf("Erro: Ponteiro de grafo NULL em graphAddVertex\n");
         return false;
     }
     if(id == NULL){
-        printf("Erro: id nulo em graphAddVertex");
+        printf("Erro: id nulo em graphAddVertex\n");
         return false;
     }
 
@@ -140,27 +140,81 @@ bool graphConnectVertices(Graph g, Data d, double weight, const char* source_id,
 {
     graph *gc = (graph*)g;
     if(gc == NULL){
-        printf("Erro: pointeiro para grafo nulo em graphConnectVertices");
+        printf("Erro: pointeiro para grafo nulo em graphConnectVertices\n");
         return false;
     }
     if(source_id == NULL || target_id == NULL){
-        printf("Erro: id de uma das vertices eh nulo em graphConnectVertices");
+        printf("Erro: id de uma das vertices eh nulo em graphConnectVertices\n");
         return false;
     }
 
     vertex *source = hashGetData(gc -> vertices, source_id);
     vertex *target = hashGetData(gc -> vertices, target_id);
     if(source == NULL || target == NULL){
-        printf("Erro: umas das vertices eh nula em graphConnectVertices");
+        printf("Erro: umas das vertices eh nula em graphConnectVertices\n");
         return false;
     }
 
     Edge e = edgeCreate(weight, source_id, target_id, d, label);
     if(e == NULL){
-        printf("Erro: falha ao criar aresta nova em graphConnectvertices");
+        printf("Erro: falha ao criar aresta nova em graphConnectvertices\n");
         return false;
     }
 
     lista_insertTail(source -> adjacent_vertices, e);
     return true;
 }
+
+bool graphIsAdjacent(Graph g, const char* source_id, const char* target_id)
+{
+    graph *gc = (graph*)g;
+    if(gc == NULL){
+        printf("Erro: ponteiro para grafo nulo em graphIsAdjacent\n");
+        return false;
+    }
+
+    vertex* source = hashGetData(gc -> vertices, source_id);
+    vertex* target = hashGetData(gc -> vertices, target_id);
+    if(source == NULL || target == NULL){
+        printf("Erro: vertices source e/ou target nulo(s) em graphIsAdjacent\n");
+        return false;
+    }
+    
+    return lista_Exists(source -> adjacent_vertices, target, NULL);
+}
+
+
+
+Vertex graphGetVertex(Graph g, const char* id)
+{
+    graph *gc = (graph*)g;
+
+    return hashGetData(gc -> vertices, id);
+}
+
+Edge graphGetEdge(Graph g, const char* source_id, const char* target_id)
+{
+    graph *gc = (graph*)g;
+    if (gc == NULL) {
+        printf("Erro: ponteiro para grafo nulo em graphGetEdge\n");
+        return NULL;
+    }
+
+    vertex *source = hashGetData(gc->vertices, source_id);
+    if (source == NULL) {
+        return NULL; 
+    }
+
+    int size = lista_getSize(source->adjacent_vertices);
+
+    for (int i = 0; i < size; i++) {
+        edge *e = (edge*)lista_getItem(source->adjacent_vertices, i);
+        
+        if (strcmp(e->target_id, target_id) == 0) {
+            return (Edge)e; // Aresta encontrada!
+        }
+    }
+
+    return NULL;
+}
+
