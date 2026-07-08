@@ -305,3 +305,56 @@ Lista *graphGetVertexNeighbors(Graph g, const char* id)
 
     return source -> adjacent_vertices;
 }
+
+
+
+bool graphSetVertexMaxCount(Graph g, int n)
+{
+    graph *gc = (graph*)g;
+    if(gc == NULL){
+        printf("Erro: ponteiro de grafo nulo em graphSetVertexMaxCount\n");
+        return false;
+    }
+
+    gc -> max_vertices = n;
+    if(gc -> max_vertices == n) return true;
+    return false;
+}
+
+bool graphSetEdgeWeight(Graph g, const char* source_id, const char* target_id, double peso)
+{
+    edge *e = graphGetEdge(g, source_id, target_id);
+    if(e == NULL){
+        printf("Erro: aresta nula em graphSetEdgeWeight\n");
+        return false;
+    }
+    e -> weight = peso;
+    if(e -> weight == peso) return true;
+    return false;
+}
+
+bool graphSetVertexAxisX (Graph g, const char* id, double x)
+{
+    vertex *v = graphGetVertex(g, id);
+    if(v == NULL){
+        printf("Erro: vertice nula em graphSetVertexAxisX");
+        return false;
+    }
+
+    v -> x = x;
+    if(v -> x == x) return true;
+    return false;
+}
+
+bool graphSetVertexAxisY(Graph g, const char* id, double y)
+{
+    vertex *v = graphGetVertex(g, id);
+    if(v == NULL){
+        printf("Erro: vertice nula egm graphSetVertexAxisY");
+        return false;
+    }
+
+    v -> y = y;
+    if(v -> y == y) return true;
+    return false;
+}
