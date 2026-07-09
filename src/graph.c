@@ -30,6 +30,18 @@ typedef struct graph
     int edge_count;
 }graph;
 
+typedef struct 
+{
+    Data target; 
+    bool found;  
+} DataSearchCtx;
+
+typedef struct 
+{
+    double distance;
+    const char* predecessor_id;
+    bool visited;
+} DijkstraCell;
 
 
 static Vertex vertexCreate(double x, double y, const char* id, Data data)
@@ -92,7 +104,29 @@ static Edge edgeCreate(double weight, const char* source_id, const char* target_
     return e;
 }
 
+static void checkDataInVertex(void* item, void* aux_data) 
+{
+    vertex *v = (vertex*)item;
+    DataSearchCtx *ctx = (DataSearchCtx*)aux_data;
 
+    if (ctx->found) return;
+
+    if (v->data == ctx->target) {
+        ctx->found = true;
+        return;
+    }
+
+    if (v->adjacent_vertices != NULL) {
+        int size = lista_getSize(v->adjacent_vertices);
+        for (int i = 0; i < size; i++) {
+            edge *e = (edge*)lista_getItem(v->adjacent_vertices, i);
+            if (e->data == ctx->target) {
+                ctx->found = true;
+                return;
+            }
+        }
+    }
+}
 
 Graph graphCreate(int n)
 {
@@ -388,4 +422,39 @@ bool graphRemoveEdge(Graph g, const char* source_id, const char* target_id)
         }
     }
     return false;
+}
+
+
+
+bool graphDataExists(Graph g, Data n)
+{
+    graph *gc = (graph*)g;
+    if (gc == NULL || n == NULL || gc->vertice_count == 0) {
+        return false;
+    }
+
+    DataSearchCtx ctx;
+    ctx.target = n;
+    ctx.found = false;
+
+    hashForEach(gc->vertices, checkDataInVertex, &ctx);
+
+    return ctx.found;
+}
+
+void graphForEach(Graph g, void (*aux)(void* item, void* aux_data), void* aux_data)
+{
+    graph* gc = (graph*)g;
+    
+    if(gc == NULL || aux == NULL){
+        printf("Erro: grafo ou acao nula em graphForEach");
+        return;
+    }
+
+    if(gc -> vertice_count == 0){
+        printf("Erro: nao ha vertices no grafo em graphForEach");
+        return;
+    }
+
+    hashForEach(gc -> vertices, aux, aux_data);
 }
