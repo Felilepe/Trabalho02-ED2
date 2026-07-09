@@ -44,6 +44,12 @@ typedef struct
     bool visited;
 } DijkstraCell;
 
+typedef struct 
+{
+    Hash dij_hash;
+    Lista *pq_lista;
+} InitContext;
+
 
 static Vertex vertexCreate(double x, double y, const char* id, Data data)
 {
@@ -128,6 +134,25 @@ static void checkDataInVertex(void* item, void* aux_data)
         }
     }
 }
+
+static void fillDijTempHashAndList(void *item, void* aux_item)
+{
+    vertex *v = (vertex*)item;
+    InitContext *ctx = (InitContext*)aux_item;
+
+    DijkstraCell* cell = malloc(sizeof(DijkstraCell));
+    if (cell == NULL) return;
+
+    cell->distance = INFINITY;
+    cell->predecessor_id = NULL;
+    cell->visited = false;
+
+    hashAdd(ctx->dij_hash, cell, v->id);
+    
+    lista_insertTail(ctx->pq_lista, (void*)v->id);
+}
+
+
 
 Graph graphCreate(int n)
 {
@@ -474,12 +499,97 @@ void graphForEach(Graph g, void (*aux)(void* item, void* aux_data), void* aux_da
 
 
 
-Lista *graphExecuteDijkstra(Graph g, bool use_time, const char* source_id, const char* end_id, double *cost)
+Lista *graphExecuteDijkstra(Graph g, bool use_time, const char* source_id, const char* target_id)
 {
-    if(source_id == NULL && end_id == NULL){
-        printf("Erro: id de inicio e/ou fim nulo(s) em graphExecuteDijkstra");
+    graph *gc = (graph*)g;
+    if (gc == NULL || source_id == NULL || target_id == NULL) return NULL;
+
+    InitContext ctx;
+    ctx.dij_hash = hashCreate(4); 
+    ctx.pq_lista = lista_create();
+
+    graphForEach(g, fillDijTempHashAndList, &ctx);
+
+    DijkstraCell *source_cell = (DijkstraCell*) hashGetData(ctx.dij_hash, source_id);
+    if (source_cell != NULL) {
+        source_cell->distance = 0.0;
+    } else {
+        printf("Erro: Origem não encontrada.\n");
         return NULL;
     }
 
-    Hash dijkstratemp = hashCreate(graphGet)
+    while (!lista_isEmpty(ctx.pq_lista)) {
+        int tamanho = lista_getSize(ctx.pq_lista);
+        double menor_dist = INFINITY;
+        int index_menor = -1;
+        const char* id_menor = NULL;
+
+        for (int i = 0; i < tamanho; i++) {
+            const char* id_atual = (const char*) lista_getItem(ctx.pq_lista, i);
+            DijkstraCell *cell = (DijkstraCell*) hashGetData(ctx.dij_hash, id_atual);
+            
+            if (cell != NULL && !cell->visited && cell->distance < menor_dist) {
+                menor_dist = cell->distance;
+                index_menor = i;
+                id_menor = id_atual;
+            }
+        }
+
+        if (index_menor == -1 || menor_dist == INFINITY) {
+            break; 
+        }
+
+        lista_removeNode(ctx.pq_lista, index_menor); 
+        DijkstraCell *menor_cell = (DijkstraCell*) hashGetData(ctx.dij_hash, id_menor);
+        menor_cell->visited = true;
+
+        if (strcmp(id_menor, target_id) == 0) {
+            break;
+        }
+
+        vertex *v_atual = (vertex*) hashGetData(gc->vertices, id_menor);
+        if (v_atual->adjacent_vertices != NULL) {
+            int num_vizinhos = lista_getSize(v_atual->adjacent_vertices);
+            
+            for (int i = 0; i < num_vizinhos; i++) {
+                edge *aresta = (edge*) lista_getItem(v_atual->adjacent_vertices, i);
+                const char* vizinho_id = aresta->target_id;
+                
+                DijkstraCell *vizinho_cell = (DijkstraCell*) hashGetData(ctx.dij_hash, vizinho_id);
+                
+                if (vizinho_cell == NULL || vizinho_cell->visited) continue;
+
+                double peso_aresta = aresta->weight; // Pode precisar de alterar isto com base no parâmetro 'use_time'
+
+                if (menor_cell->distance + peso_aresta < vizinho_cell->distance) {
+                    vizinho_cell->distance = menor_cell->distance + peso_aresta;
+                    vizinho_cell->predecessor_id = id_menor;
+                }
+            }
+        }
+    }
+
+    Lista *caminho_final = lista_create();
+    const char* curr_id = target_id;
+    
+    DijkstraCell *target_cell = (DijkstraCell*) hashGetData(ctx.dij_hash, target_id);
+    if (target_cell == NULL || target_cell->distance == INFINITY) {
+        lista_destroy(caminho_final);
+        caminho_final = NULL;
+    } else {
+        while (curr_id != NULL) {
+            lista_insertHead(caminho_final, (void*)curr_id);
+            if (strcmp(curr_id, source_id) == 0) break;
+            
+            DijkstraCell *cell = (DijkstraCell*) hashGetData(ctx.dij_hash, curr_id);
+            curr_id = cell->predecessor_id;
+        }
+    }
+
+    lista_destroy(ctx.pq_lista);
+    
+    hashForEach(ctx.dij_hash, (void (*)(void*, void*))free, NULL);
+    hashDestroy(ctx.dij_hash);
+
+    return caminho_final;
 }
