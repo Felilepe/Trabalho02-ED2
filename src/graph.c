@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "graph.h"
 #include "lista.h"
 #include "hte.h"
@@ -267,6 +268,17 @@ int graphGetVertexCount(Graph g)
     return gc -> vertice_count;
 }
 
+int graphGetMaxVertexCount(Graph g)
+{
+    graph* gc = (graph*)g;
+    if(gc == NULL){
+        printf("Erro: ponteiro de grafo nulo em graphGetVertexCount\n");
+        return -1;
+    }
+    
+    return gc -> max_vertices;
+}
+
 int graphGetEdgeCount(Graph g)
 {
     graph* gc = (graph*)g;
@@ -457,4 +469,17 @@ void graphForEach(Graph g, void (*aux)(void* item, void* aux_data), void* aux_da
     }
 
     hashForEach(gc -> vertices, aux, aux_data);
+}
+
+
+
+
+Lista *graphExecuteDijkstra(Graph g, bool use_time, const char* source_id, const char* end_id, double *cost)
+{
+    if(source_id == NULL && end_id == NULL){
+        printf("Erro: id de inicio e/ou fim nulo(s) em graphExecuteDijkstra");
+        return NULL;
+    }
+
+    Hash dijkstratemp = hashCreate(graphGet)
 }

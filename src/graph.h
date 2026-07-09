@@ -27,6 +27,8 @@ Edge graphGetEdge(Graph g, const char* source_id, const char* target_id);
 
 int graphGetVertexCount(Graph g);
 
+int graphGetMaxVertexCount(Graph g);
+
 int graphGetEdgeCount(Graph g);
 
 Data graphGetVertexData(Graph g, const char* id);
