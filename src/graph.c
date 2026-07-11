@@ -443,12 +443,20 @@ int graphGetEdgeCount(Graph g)
 double graphGetVertexAxisX(Graph g, const char* id)
 {
     vertex *v = graphGetVertex(g, id);
+    if(v == NULL){
+        printf("Erro: vertice nula em graphGetVertexAxisX");
+        return INFINITY;
+    }
     return v -> x;
 }
 
 double graphGetVertexAxisY(Graph g, const char* id)
 {
     vertex *v = graphGetVertex(g, id);
+    if(v == NULL){
+        printf("Erro: vertice nula em graphGetVertexAxisY");
+        return INFINITY;
+    }
     return v -> y;
 }
 
