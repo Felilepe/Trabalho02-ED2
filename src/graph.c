@@ -6,12 +6,14 @@
 #include "lista.h"
 #include "hte.h"
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
 typedef struct vertex
 {
     double x, y;
     const char* id;
     Data data;
-    Lista *adjacent_vertices;
+    Lista *edges;
 }vertex;
 
 typedef struct edge
@@ -50,6 +52,23 @@ typedef struct
     Lista *pq_lista;
 } InitContext;
 
+typedef struct 
+{
+    int index;
+    int lowlink;
+    bool onStack;
+} TarjanCell;
+
+typedef struct 
+{
+    Hash tarjan_hash;       
+    Lista *stack;           
+    Lista *scc_list;        
+    int index_counter;      
+    Graph g;               
+    bool (*edge_filter)(void*, void*); 
+    void *filter_context;   
+} TarjanContext;
 
 static Vertex vertexCreate(double x, double y, const char* id, Data data)
 {
@@ -59,7 +78,7 @@ static Vertex vertexCreate(double x, double y, const char* id, Data data)
         return NULL;
     }
 
-    v ->adjacent_vertices = lista_create();
+    v ->edges = lista_create();
     v -> data = data;
     v -> id = NULL;
     v -> x = x;
@@ -68,6 +87,7 @@ static Vertex vertexCreate(double x, double y, const char* id, Data data)
     v -> id = (char*)malloc(strlen(id) + 1);
     if(v -> id == NULL){
         printf("Erro: Falha ao atribuir id a vertice criada");
+        return NULL;
     }
     strcpy(v -> id, id);
 
@@ -78,7 +98,7 @@ static void vertexDestroy(Vertex v)
 {
     vertex *vc = (vertex*)v;
     free(vc -> id);
-    lista_destroy(vc ->adjacent_vertices);
+    lista_destroy(vc ->edges);
     free(vc);
 }
 
@@ -95,16 +115,19 @@ static Edge edgeCreate(double weight, const char* source_id, const char* target_
     e -> source_id = (char*)malloc(strlen(source_id) + 1);
     if(e -> source_id == NULL){
         printf("Erro: Falha ao atribuir source_id a aresta criada\n");
+        return NULL;
     }
     strcpy(e -> source_id, source_id);
     e -> target_id = (char*)malloc(strlen(target_id) + 1);
     if(e -> target_id == NULL){
         printf("Erro: Falha ao atribuir target_id a aresta criada\n");
+        return NULL;
     }
     strcpy(e -> target_id, target_id);
     e -> label = (char*)malloc(strlen(label) + 1);
     if(e -> label == NULL){
         printf("Erro: Falha ao atribuir label a aresta criada\n");
+        return NULL;
     }
     strcpy(e -> label, label);
 
@@ -123,10 +146,10 @@ static void checkDataInVertex(void* item, void* aux_data)
         return;
     }
 
-    if (v->adjacent_vertices != NULL) {
-        int size = lista_getSize(v->adjacent_vertices);
+    if (v->edges != NULL) {
+        int size = lista_getSize(v->edges);
         for (int i = 0; i < size; i++) {
-            edge *e = (edge*)lista_getItem(v->adjacent_vertices, i);
+            edge *e = (edge*)lista_getItem(v->edges, i);
             if (e->data == ctx->target) {
                 ctx->found = true;
                 return;
@@ -150,6 +173,114 @@ static void fillDijTempHashAndList(void *item, void* aux_item)
     hashAdd(ctx->dij_hash, cell, v->id);
     
     lista_insertTail(ctx->pq_lista, (void*)v->id);
+}
+
+static void initTarjanCell(void *item, void* aux_item) 
+{
+    vertex *v = (vertex*)item;
+    Hash tarjan_hash = (Hash)aux_item;
+
+    TarjanCell* cell = malloc(sizeof(TarjanCell));
+    if (cell != NULL) {
+        cell->index = -1; 
+        cell->lowlink = -1;
+        cell->onStack = false;
+        hashAdd(tarjan_hash, cell, v->id);
+    }
+}
+
+static void tarjanDFS(const char* v_id, TarjanContext *ctx) 
+{
+    TarjanCell *v_cell = (TarjanCell*) hashGetData(ctx->tarjan_hash, v_id);
+    v_cell->index = ctx->index_counter;
+    v_cell->lowlink = ctx->index_counter;
+    ctx->index_counter++;
+
+    lista_insertHead(ctx->stack, (void*)v_id);
+    v_cell->onStack = true;
+
+    Lista *vizinhos = graphGetNeighbors(ctx->g, v_id);
+    if (vizinhos != NULL) {
+        int num_vizinhos = lista_getSize(vizinhos);
+        
+        for (int i = 0; i < num_vizinhos; i++) {
+            edge *aresta = (edge*) lista_getItem(vizinhos, i);
+            
+            if (ctx->edge_filter != NULL) {
+                if (!ctx->edge_filter(aresta->data, ctx->filter_context)) {
+                    continue; 
+                }
+            }
+
+            const char* w_id = aresta->target_id;
+            TarjanCell *w_cell = (TarjanCell*) hashGetData(ctx->tarjan_hash, w_id);
+            
+            if (w_cell->index == -1) {
+                tarjanDFS(w_id, ctx);
+                v_cell->lowlink = MIN(v_cell->lowlink, w_cell->lowlink);
+            } else if (w_cell->onStack) {
+                v_cell->lowlink = MIN(v_cell->lowlink, w_cell->index);
+            }
+        }
+    }
+
+    if (v_cell->lowlink == v_cell->index) {
+        Lista *scc_atual = lista_create();
+        const char* w_id = NULL;
+        
+        do {
+            w_id = (const char*) lista_getItem(ctx->stack, 0); 
+            lista_removeHead(ctx->stack);
+            
+            TarjanCell *w_cell = (TarjanCell*) hashGetData(ctx->tarjan_hash, w_id);
+            w_cell->onStack = false;
+            
+            lista_insertTail(scc_atual, (void*)w_id);
+            
+        } while (strcmp(w_id, v_id) != 0);
+        
+        lista_insertTail(ctx->scc_list, scc_atual);
+    }
+}
+
+static void startTarjan(void *item, void *aux_data) 
+{
+    vertex *v = (vertex*)item;
+    TarjanContext *ctx = (TarjanContext*)aux_data;
+    TarjanCell *cell = (TarjanCell*) hashGetData(ctx->tarjan_hash, v->id);
+    
+    if (cell != NULL && cell->index == -1) {
+        tarjanDFS(v->id, ctx);
+    }
+}
+
+
+
+static void freeEdge(void *item, void *aux_data) {
+    edge *e = (edge*)item;
+    if (e != NULL) {
+        if (e->source_id) free((void*)e->source_id);
+        if (e->target_id) free((void*)e->target_id);
+        if (e->label) free((void*)e->label);
+        
+        free(e);
+    }
+}
+
+static void freeVertex(void *item, void *aux_data) {
+    vertex *v = (vertex*)item;
+    if (v != NULL) {
+        if (v->edges != NULL) {
+            lista_passthrough(v->edges, freeEdge, NULL);
+            
+
+            lista_destroy(v->edges); 
+        }
+
+        if (v->id) free((void*)v->id);
+
+        free(v);
+    }
 }
 
 
@@ -186,14 +317,8 @@ bool graphAddVertex(Graph g, Data d, const char* id)
 
     Vertex v = vertexCreate(0.0, 0.0, id, d);
 
-    hashAdd(gc -> vertices, v, id);
-
-    if(hashExists(gc -> vertices, id)){
-        return true;
-    }
-
-    vertexDestroy(v);
-    return false;
+    gc -> vertice_count++;
+    return hashAdd(gc -> vertices, v, id);
 }
 
 bool graphConnectVertices(Graph g, Data d, double weight, const char* source_id, const char* target_id, const char *label)
@@ -221,7 +346,8 @@ bool graphConnectVertices(Graph g, Data d, double weight, const char* source_id,
         return false;
     }
 
-    lista_insertTail(source -> adjacent_vertices, e);
+    lista_insertTail(source -> edges, e);
+    gc -> edge_count++;
     return true;
 }
 
@@ -240,7 +366,7 @@ bool graphIsAdjacent(Graph g, const char* source_id, const char* target_id)
         return false;
     }
     
-    return lista_Exists(source -> adjacent_vertices, target, NULL);
+    return lista_Exists(source -> edges, target, NULL);
 }
 
 
@@ -250,7 +376,7 @@ Vertex graphGetVertex(Graph g, const char* id)
     graph *gc = (graph*)g;
     if(gc == NULL){
         printf("Erro: ponteiro de grafo nulo em graphGetVertex\n");
-        return -1;
+        return NULL;
     }
 
     return hashGetData(gc -> vertices, id);
@@ -270,10 +396,10 @@ Edge graphGetEdge(Graph g, const char* source_id, const char* target_id)
         return NULL; 
     }
 
-    int size = lista_getSize(source->adjacent_vertices);
+    int size = lista_getSize(source->edges);
 
     for (int i = 0; i < size; i++) {
-        edge *e = (edge*)lista_getItem(source->adjacent_vertices, i);
+        edge *e = (edge*)lista_getItem(source->edges, i);
         
         if (strcmp(e->target_id, target_id) == 0) {
             return (Edge)e; // Aresta encontrada!
@@ -314,6 +440,18 @@ int graphGetEdgeCount(Graph g)
     return gc -> edge_count;   
 }
 
+double graphGetVertexAxisX(Graph g, const char* id)
+{
+    vertex *v = graphGetVertex(g, id);
+    return v -> x;
+}
+
+double graphGetVertexAxisY(Graph g, const char* id)
+{
+    vertex *v = graphGetVertex(g, id);
+    return v -> y;
+}
+
 Data graphGetVertexData(Graph g, const char* id)
 {
     graph* gc = (graph*)g;
@@ -322,7 +460,10 @@ Data graphGetVertexData(Graph g, const char* id)
         return NULL;
     }
     vertex *v = hashGetData(gc -> vertices, id);
-    if(v == NULL)
+    if(v == NULL){
+        printf("Erro: vertice nula em graphGetVertexData");
+        return NULL;
+    }
     return v -> data;
 }
 
@@ -374,7 +515,7 @@ Lista *graphGetVertexNeighbors(Graph g, const char* id)
         return NULL; 
     }
 
-    return source -> adjacent_vertices;
+    return source -> edges;
 }
 
 
@@ -451,10 +592,10 @@ bool graphRemoveEdge(Graph g, const char* source_id, const char* target_id)
         printf("Erro: vertice nula em graphRemoveEdge");
         return false;
     }
-    for(int i = 0; i < lista_getSize(v -> adjacent_vertices); i++){
-        edge *e = lista_getItem(v ->adjacent_vertices, i);
-        if(e -> source_id == source_id && e -> target_id == target_id){
-            lista_removeNode(v ->adjacent_vertices, i);
+    for(int i = 0; i < lista_getSize(v -> edges); i++){
+        edge *e = lista_getItem(v ->edges, i);
+        if(strcmp(e -> source_id, source_id) && strcmp(e -> target_id, target_id)){
+            lista_removeNode(v ->edges, i);
             return true;
         }
     }
@@ -495,7 +636,6 @@ void graphForEach(Graph g, void (*aux)(void* item, void* aux_data), void* aux_da
 
     hashForEach(gc -> vertices, aux, aux_data);
 }
-
 
 
 
@@ -548,17 +688,18 @@ Lista *graphExecuteDijkstra(Graph g, bool use_time, const char* source_id, const
         }
 
         vertex *v_atual = (vertex*) hashGetData(gc->vertices, id_menor);
-        if (v_atual->adjacent_vertices != NULL) {
-            int num_vizinhos = lista_getSize(v_atual->adjacent_vertices);
+        if (v_atual->edges != NULL) {
+            int num_vizinhos = lista_getSize(v_atual->edges);
             
             for (int i = 0; i < num_vizinhos; i++) {
-                edge *aresta = (edge*) lista_getItem(v_atual->adjacent_vertices, i);
+                edge *aresta = (edge*) lista_getItem(v_atual->edges, i);
                 const char* vizinho_id = aresta->target_id;
                 
                 DijkstraCell *vizinho_cell = (DijkstraCell*) hashGetData(ctx.dij_hash, vizinho_id);
                 
                 if (vizinho_cell == NULL || vizinho_cell->visited) continue;
 
+                
                 double peso_aresta = aresta->weight; // Pode precisar de alterar isto com base no parâmetro 'use_time'
 
                 if (menor_cell->distance + peso_aresta < vizinho_cell->distance) {
@@ -592,4 +733,46 @@ Lista *graphExecuteDijkstra(Graph g, bool use_time, const char* source_id, const
     hashDestroy(ctx.dij_hash);
 
     return caminho_final;
+}
+
+Lista *graphExecuteTarjan(Graph g, bool (*edge_filter)(void *edge_data, void *context), void* context)
+{
+    graph *gc = (graph*)g;
+    if (gc == NULL || gc->vertice_count == 0) return NULL;
+
+    TarjanContext ctx;
+    ctx.tarjan_hash = hashCreate(4); 
+    ctx.stack = lista_create();     
+    ctx.scc_list = lista_create();  
+    ctx.index_counter = 0;
+    ctx.g = g;
+    ctx.edge_filter = edge_filter;
+    ctx.filter_context = context;
+
+    graphForEach(g, initTarjanCell, ctx.tarjan_hash);
+
+    graphForEach(g, startTarjan, &ctx);
+
+    lista_destroy(ctx.stack); 
+    
+    hashForEach(ctx.tarjan_hash, (void (*)(void*, void*))free, NULL);
+    hashDestroy(ctx.tarjan_hash);
+
+    return ctx.scc_list;
+}
+
+
+
+void graphDestroy(Graph g) 
+{
+    graph *gc = (graph*)g;
+    if (gc == NULL) return;
+
+    if (gc->vertices != NULL) {
+        hashForEach(gc->vertices, freeVertex, NULL);
+        
+        hashDestroy(gc->vertices);
+    }
+
+    free(gc);
 }

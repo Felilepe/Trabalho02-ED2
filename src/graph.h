@@ -31,6 +31,10 @@ int graphGetMaxVertexCount(Graph g);
 
 int graphGetEdgeCount(Graph g);
 
+double graphGetVertexAxisX(Graph g, const char* id);
+
+double graphGetVertexAxisY(Graph g, const char* id);
+
 Data graphGetVertexData(Graph g, const char* id);
 
 Data graphGetEdgeData(Graph g, const char* source_id, const char* target_id);
@@ -62,13 +66,13 @@ bool graphDataExists(Graph g, Data n);
 
 void graphForEach(Graph g, void (*aux)(void* item, void* aux_data), void* aux_data);
 
-Lista *graphExecuteDijkstra(Graph g, bool use_time, const char* source_id, const char* end_id, double *cost);
+Lista *graphExecuteDijkstra(Graph g, bool use_time, const char* source_id, const char* end_id);
 
 Lista *graphExecuteTarjan(Graph g, bool (*edge_filter)(void *edge_data, void *context), void* context);
 
 
 
-bool graphDestroy(Graph g);
+void graphDestroy(Graph g);
 
 
 #endif
