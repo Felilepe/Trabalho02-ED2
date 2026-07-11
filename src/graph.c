@@ -594,7 +594,7 @@ bool graphRemoveEdge(Graph g, const char* source_id, const char* target_id)
     }
     for(int i = 0; i < lista_getSize(v -> edges); i++){
         edge *e = lista_getItem(v ->edges, i);
-        if(!strcmp(e -> source_id, source_id) && strcmp(e -> target_id, target_id)){
+        if(!strcmp(e -> source_id, source_id) && !strcmp(e -> target_id, target_id)){
             lista_removeNode(v ->edges, i);
             return true;
         }
