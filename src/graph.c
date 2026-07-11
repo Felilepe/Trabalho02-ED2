@@ -353,20 +353,7 @@ bool graphConnectVertices(Graph g, Data d, double weight, const char* source_id,
 
 bool graphIsAdjacent(Graph g, const char* source_id, const char* target_id)
 {
-    graph *gc = (graph*)g;
-    if(gc == NULL){
-        printf("Erro: ponteiro para grafo nulo em graphIsAdjacent\n");
-        return false;
-    }
-
-    vertex* source = hashGetData(gc -> vertices, source_id);
-    vertex* target = hashGetData(gc -> vertices, target_id);
-    if(source == NULL || target == NULL){
-        printf("Erro: vertices source e/ou target nulo(s) em graphIsAdjacent\n");
-        return false;
-    }
-    
-    return lista_Exists(source -> edges, target, NULL);
+    return graphGetEdge(g, source_id, target_id) != NULL;
 }
 
 
