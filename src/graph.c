@@ -577,6 +577,7 @@ bool graphRemoveVertex(Graph g, const char* id)
     }
 
     hashRemove(gc -> vertices, id);
+    gc -> vertice_count--;
     return !hashExists(gc -> vertices, id);
 }
 
@@ -591,6 +592,7 @@ bool graphRemoveEdge(Graph g, const char* source_id, const char* target_id)
         edge *e = lista_getItem(v ->edges, i);
         if(!strcmp(e -> source_id, source_id) && !strcmp(e -> target_id, target_id)){
             lista_removeNode(v ->edges, i);
+            ((graph*)g) -> edge_count--;
             return true;
         }
     }
