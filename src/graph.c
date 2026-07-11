@@ -42,7 +42,7 @@ typedef struct
 typedef struct 
 {
     double distance;
-    const char* predecessor_id;
+    const edge* predecessor_edge;
     bool visited;
 } DijkstraCell;
 
@@ -167,7 +167,7 @@ static void fillDijTempHashAndList(void *item, void* aux_item)
     if (cell == NULL) return;
 
     cell->distance = INFINITY;
-    cell->predecessor_id = NULL;
+    cell->predecessor_edge = NULL;
     cell->visited = false;
 
     hashAdd(ctx->dij_hash, cell, v->id);
@@ -594,7 +594,7 @@ bool graphRemoveEdge(Graph g, const char* source_id, const char* target_id)
     }
     for(int i = 0; i < lista_getSize(v -> edges); i++){
         edge *e = lista_getItem(v ->edges, i);
-        if(strcmp(e -> source_id, source_id) && strcmp(e -> target_id, target_id)){
+        if(!strcmp(e -> source_id, source_id) && strcmp(e -> target_id, target_id)){
             lista_removeNode(v ->edges, i);
             return true;
         }
@@ -639,10 +639,12 @@ void graphForEach(Graph g, void (*aux)(void* item, void* aux_data), void* aux_da
 
 
 
-Lista *graphExecuteDijkstra(Graph g, bool use_time, const char* source_id, const char* target_id)
+Lista *graphExecuteDijkstra(Graph g, const char* source_id, const char* target_id,
+                            double (*weight_fn)(Data edge_data, void *context),
+                            void *context, double *out_cost)
 {
     graph *gc = (graph*)g;
-    if (gc == NULL || source_id == NULL || target_id == NULL) return NULL;
+    if (gc == NULL || source_id == NULL || target_id == NULL || weight_fn == NULL) return NULL;
 
     InitContext ctx;
     ctx.dij_hash = hashCreate(4); 
@@ -704,7 +706,7 @@ Lista *graphExecuteDijkstra(Graph g, bool use_time, const char* source_id, const
 
                 if (menor_cell->distance + peso_aresta < vizinho_cell->distance) {
                     vizinho_cell->distance = menor_cell->distance + peso_aresta;
-                    vizinho_cell->predecessor_id = id_menor;
+                    vizinho_cell->predecessor_edge = aresta;
                 }
             }
         }
@@ -715,15 +717,17 @@ Lista *graphExecuteDijkstra(Graph g, bool use_time, const char* source_id, const
     
     DijkstraCell *target_cell = (DijkstraCell*) hashGetData(ctx.dij_hash, target_id);
     if (target_cell == NULL || target_cell->distance == INFINITY) {
+        *out_cost = -1;
         lista_destroy(caminho_final);
         caminho_final = NULL;
     } else {
+        *out_cost = target_cell->distance;
         while (curr_id != NULL) {
-            lista_insertHead(caminho_final, (void*)curr_id);
             if (strcmp(curr_id, source_id) == 0) break;
             
             DijkstraCell *cell = (DijkstraCell*) hashGetData(ctx.dij_hash, curr_id);
-            curr_id = cell->predecessor_id;
+            lista_insertHead(caminho_final, cell ->predecessor_edge);
+            curr_id = cell->predecessor_edge -> source_id;
         }
     }
 
