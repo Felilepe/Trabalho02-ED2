@@ -66,7 +66,9 @@ bool graphDataExists(Graph g, Data n);
 
 void graphForEach(Graph g, void (*aux)(void* item, void* aux_data), void* aux_data);
 
-Lista *graphExecuteDijkstra(Graph g, bool use_time, const char* source_id, const char* end_id);
+Lista *graphExecuteDijkstra(Graph g, const char* source_id, const char* target_id,
+                            double (*weight_fn)(Data edge_data, void *context),
+                            void *context, double *out_cost);
 
 Lista *graphExecuteTarjan(Graph g, bool (*edge_filter)(void *edge_data, void *context), void* context);
 

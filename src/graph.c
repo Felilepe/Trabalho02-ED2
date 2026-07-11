@@ -710,7 +710,7 @@ Lista *graphExecuteDijkstra(Graph g, const char* source_id, const char* target_i
                 if (vizinho_cell == NULL || vizinho_cell->visited) continue;
 
                 
-                double peso_aresta = aresta->weight; // Pode precisar de alterar isto com base no parâmetro 'use_time'
+                double peso_aresta = weight_fn(aresta -> data, context);
 
                 if (menor_cell->distance + peso_aresta < vizinho_cell->distance) {
                     vizinho_cell->distance = menor_cell->distance + peso_aresta;
@@ -725,11 +725,15 @@ Lista *graphExecuteDijkstra(Graph g, const char* source_id, const char* target_i
     
     DijkstraCell *target_cell = (DijkstraCell*) hashGetData(ctx.dij_hash, target_id);
     if (target_cell == NULL || target_cell->distance == INFINITY) {
-        *out_cost = -1;
+        if(out_cost != NULL){
+            *out_cost = -1;
+        }
         lista_destroy(caminho_final);
         caminho_final = NULL;
     } else {
-        *out_cost = target_cell->distance;
+        if(out_cost != NULL){
+            *out_cost = target_cell->distance;
+        }
         while (curr_id != NULL) {
             if (strcmp(curr_id, source_id) == 0) break;
             
