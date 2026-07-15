@@ -41,6 +41,12 @@ typedef struct
 
 typedef struct 
 {
+    const char *id_removido;
+    graph *gc;
+} RemoveVertexCtx;
+
+typedef struct 
+{
     double distance;
     const edge* predecessor_edge;
     bool visited;
@@ -199,7 +205,7 @@ static void tarjanDFS(const char* v_id, TarjanContext *ctx)
     lista_insertHead(ctx->stack, (void*)v_id);
     v_cell->onStack = true;
 
-    Lista *vizinhos = graphGetNeighbors(ctx->g, v_id);
+    Lista *vizinhos = graphGetVertexNeighbors(ctx->g, v_id);
     if (vizinhos != NULL) {
         int num_vizinhos = lista_getSize(vizinhos);
         
@@ -576,9 +582,13 @@ bool graphRemoveVertex(Graph g, const char* id)
         return false;
     }
 
-    hashRemove(gc -> vertices, id);
-    gc -> vertice_count--;
-    return !hashExists(gc -> vertices, id);
+    vertex *v = hashGetData(gc -> vertices, id);
+    if(v == NULL){
+        printf("Erro: verice nula em graphRemoveVertex");
+        return false;
+    }
+
+    graphForEach(g, )
 }
 
 bool graphRemoveEdge(Graph g, const char* source_id, const char* target_id)
@@ -591,6 +601,7 @@ bool graphRemoveEdge(Graph g, const char* source_id, const char* target_id)
     for(int i = 0; i < lista_getSize(v -> edges); i++){
         edge *e = lista_getItem(v ->edges, i);
         if(!strcmp(e -> source_id, source_id) && !strcmp(e -> target_id, target_id)){
+            freeEdge(e, NULL);
             lista_removeNode(v ->edges, i);
             ((graph*)g) -> edge_count--;
             return true;
