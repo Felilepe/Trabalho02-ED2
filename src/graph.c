@@ -357,6 +357,10 @@ bool graphConnectVertices(Graph g, Data d, double weight, const char* source_id,
         printf("Erro: ponteiro para label nulo em graphConnectVertices\n");
         return false;
     }
+    if(graphIsAdjacent(g, source_id, target_id)){
+        printf("Erro: vertices ja estao conectadas\n");
+        return false;
+    }
 
     vertex *source = hashGetData(gc -> vertices, source_id);
     vertex *target = hashGetData(gc -> vertices, target_id);
