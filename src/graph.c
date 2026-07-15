@@ -535,7 +535,12 @@ Lista *graphGetVertexNeighbors(Graph g, const char* id)
         return NULL; 
     }
 
-    return source -> edges;
+    Lista *copy = lista_create();
+    for(int i = 0; i<lista_getSize; i++){
+        lista_insertTail(copy, lista_getItem(source -> edges, i));
+    }
+
+    return copy;
 }
 
 
