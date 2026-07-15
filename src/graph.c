@@ -93,6 +93,8 @@ static Vertex vertexCreate(double x, double y, const char* id, Data data)
     v -> id = (char*)malloc(strlen(id) + 1);
     if(v -> id == NULL){
         printf("Erro: Falha ao atribuir id a vertice criada");
+        free(v -> edges);
+        free(v);
         return NULL;
     }
     strcpy(v -> id, id);
