@@ -102,14 +102,6 @@ static Vertex vertexCreate(double x, double y, const char* id, Data data)
     return v;
 }
 
-static void vertexDestroy(Vertex v)
-{
-    vertex *vc = (vertex*)v;
-    free(vc -> id);
-    lista_destroy(vc ->edges);
-    free(vc);
-}
-
 static Edge edgeCreate(double weight, const char* source_id, const char* target_id, Data data, char* label)
 {
     edge *e = malloc(sizeof(edge));
@@ -128,12 +120,15 @@ static Edge edgeCreate(double weight, const char* source_id, const char* target_
     e -> source_id = (char*)malloc(strlen(source_id) + 1);
     if(e -> source_id == NULL){
         printf("Erro: Falha ao atribuir source_id a aresta criada\n");
+        free(e);
         return NULL;
     }
     strcpy(e -> source_id, source_id);
     e -> target_id = (char*)malloc(strlen(target_id) + 1);
     if(e -> target_id == NULL){
         printf("Erro: Falha ao atribuir target_id a aresta criada\n");
+        free(e -> source_id);
+        free(e);
         return NULL;
     }
     strcpy(e -> target_id, target_id);
@@ -254,6 +249,7 @@ static void tarjanDFS(const char* v_id, TarjanContext *ctx)
         
         lista_insertTail(ctx->scc_list, scc_atual);
     }
+    lista_destroy(vizinhos);
 }
 
 static void startTarjan(void *item, void *aux_data) 
@@ -296,6 +292,24 @@ static void freeVertex(void *item, void *aux_data) {
     }
 }
 
+static void removeEdgesToVertex(void *item, void *aux_data)
+{
+    vertex *v = (vertex*)item;
+    RemoveVertexCtx *ctx = (RemoveVertexCtx*)aux_data;
+
+    int i = 0;
+    while (i < lista_getSize(v -> edges)) {
+        edge *e = (edge*)lista_getItem(v -> edges, i);
+
+        if (strcmp(e -> target_id, ctx -> id_removido) == 0) {
+            freeEdge(e, NULL);
+            lista_removeNode(v -> edges, i);
+            ctx -> gc -> edge_count--;
+        } else {
+            i++;
+        }
+    }
+}
 
 
 Graph graphCreate(int n)
@@ -333,6 +347,10 @@ bool graphAddVertex(Graph g, Data d, const char* id)
     }
 
     Vertex v = vertexCreate(0.0, 0.0, id, d);
+    if(v == NULL){
+        printf("Erro: ponteiro para vertice nulo em graphAddVertex\n");
+        return false;
+    }
     
     bool added = hashAdd(gc -> vertices, v, id);
     if(added){
@@ -540,7 +558,7 @@ Lista *graphGetVertexNeighbors(Graph g, const char* id)
     }
 
     Lista *copy = lista_create();
-    for(int i = 0; i<lista_getSize; i++){
+    for(int i = 0; i<lista_getSize(source -> edges); i++){
         lista_insertTail(copy, lista_getItem(source -> edges, i));
     }
 
@@ -609,14 +627,30 @@ bool graphRemoveVertex(Graph g, const char* id)
         printf("Erro: ponteiro de grafo nulo em graphRemoveVertex\n");
         return false;
     }
-
-    vertex *v = hashGetData(gc -> vertices, id);
-    if(v == NULL){
-        printf("Erro: verice nula em graphRemoveVertex");
+    if(id == NULL){
+        printf("Erro: id nulo em graphRemoveVertex\n");
         return false;
     }
 
-    graphForEach(g, )
+    vertex *v = hashGetData(gc -> vertices, id);
+    if(v == NULL){
+        printf("Erro: vertice nula em graphRemoveVertex\n");
+        return false;
+    }
+
+    RemoveVertexCtx ctx;
+    ctx.id_removido = id;
+    ctx.gc = gc;
+    hashForEach(gc -> vertices, removeEdgesToVertex, &ctx);
+
+    gc -> edge_count -= lista_getSize(v -> edges);
+
+    hashRemove(gc -> vertices, id);
+    freeVertex(v, NULL);
+
+    gc -> vertice_count--;
+
+    return true;
 }
 
 bool graphRemoveEdge(Graph g, const char* source_id, const char* target_id)
