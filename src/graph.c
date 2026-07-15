@@ -117,6 +117,11 @@ static Edge edgeCreate(double weight, const char* source_id, const char* target_
         printf("Erro: falha ao alocar memoria para nova aresta\n");
         return NULL;
     }
+    if(label == NULL){
+        printf("Erro: ponteiro label nulo. Nao foi possivel criar aresta\n");
+        free(e);
+        return NULL;
+    }
 
     e -> data = data;
     e -> weight = weight;
@@ -346,6 +351,10 @@ bool graphConnectVertices(Graph g, Data d, double weight, const char* source_id,
     }
     if(source_id == NULL || target_id == NULL){
         printf("Erro: id de uma das vertices eh nulo em graphConnectVertices\n");
+        return false;
+    }
+    if(label == NULL){
+        printf("Erro: ponteiro para label nulo em graphConnectVertices\n");
         return false;
     }
 
