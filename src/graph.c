@@ -320,11 +320,19 @@ bool graphAddVertex(Graph g, Data d, const char* id)
         printf("Erro: id nulo em graphAddVertex\n");
         return false;
     }
+    if(gc -> vertice_count == gc -> max_vertices){
+        printf("Erro: limite de vertices atingido. Para aumentar limite, use graphSetVertexMaxCount\n");
+        return false;
+    }
 
     Vertex v = vertexCreate(0.0, 0.0, id, d);
+    
+    bool added = hashAdd(gc -> vertices, v, id);
+    if(added){
+        gc -> vertice_count++;
+    }
 
-    gc -> vertice_count++;
-    return hashAdd(gc -> vertices, v, id);
+    return added;
 }
 
 bool graphConnectVertices(Graph g, Data d, double weight, const char* source_id, const char* target_id, const char *label)
