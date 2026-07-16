@@ -201,8 +201,8 @@ bool hashAdd(Hash h, void *data, const char* key)
 void *hashRemove(Hash h, const char* key) {
     hashtable *ht = (hashtable*)h;
     
-    // 1. Validações de segurança
     if (ht == NULL || key == NULL) {
+        printf("Erro: ponteiro para hash table nulo em HashRemove\n");
         return NULL;
     }
 
@@ -217,7 +217,7 @@ void *hashRemove(Hash h, const char* key) {
             void *data_to_return = b->records[i].data;
 
             b->records[i].is_occupied = false;
-            b->records[i].data = NULL; // Limpeza por segurança
+            b->records[i].data = NULL; 
             
             b->records[i].key[0] = '\0'; 
 
@@ -229,3 +229,50 @@ void *hashRemove(Hash h, const char* key) {
 
     return NULL;
 }
+
+bool hashExists(Hash h, const char* key)
+{
+    hashtable *ht = (hashtable*)h;
+    
+    if (ht == NULL || key == NULL) {
+        printf("Erro: ponteiro para hash table nulo em HashExists\n");
+        return false;
+    }
+
+    uint32_t hash_val = hashString(key);
+
+
+    uint32_t index = hash_val & ((1 << ht->global_depth) - 1);
+    bucket *b = ht->directory[index];
+
+    for (uint32_t i = 0; i < ht->bucket_size; i++) {
+        if (b->records[i].is_occupied && strcmp(b->records[i].key, key) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void *hashGetData(Hash h, const char* key)
+{
+    hashtable *ht = (hashtable*)h;
+    
+    if (ht == NULL || key == NULL) {
+        printf("Erro: ponteiro para hash table nulo em HashGetData\n");
+        return NULL;
+    }
+
+    uint32_t hash_val = hashString(key);
+
+
+    uint32_t index = hash_val & ((1 << ht->global_depth) - 1);
+    bucket *b = ht->directory[index];
+
+    for (uint32_t i = 0; i < ht->bucket_size; i++) {
+        if (b->records[i].is_occupied && strcmp(b->records[i].key, key) == 0) {
+            return b -> records[i].data;
+        }
+    }
+    return NULL;
+}
+
