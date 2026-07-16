@@ -283,9 +283,106 @@ void *hashGetData(Hash h, const char* key)
 int hashGetSize(Hash h)
 {
     if(h == NULL){
-        printf("Erro: ponteiro para hash table nulo em hashGetSize");
+        printf("Erro: ponteiro para hash table nulo em hashGetSize\n");
         return -1;
     }
 
     return (((hashtable*)h) ->total_elements);
+}
+
+bool hashUpdate(Hash h, const char* key, const void* new_data)
+{
+    hashtable *ht = (hashtable*)h;
+    
+    if (ht == NULL || key == NULL) {
+        printf("Erro: ponteiro e/ou chave invalido(s) em hashUpdate\n");
+        return false;
+    }
+
+    uint32_t hash_val = hashString(key);
+    uint32_t index = hash_val & ((1 << ht->global_depth) - 1);
+    bucket *b = ht->directory[index];
+
+    for (uint32_t i = 0; i < ht->bucket_size; i++) {
+        if (b->records[i].is_occupied && strcmp(b->records[i].key, key) == 0) {
+            
+            b->records[i].data = (void*)new_data; 
+            
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+void hashForEach(Hash h, void (*aux)(void* item, void* aux_data), void* aux_data)
+{
+    hashtable *ht = (hashtable*)h;
+    
+    if (ht == NULL || aux == NULL) {
+        printf("Erro: ponteiro(s) invalido(s) em hashForEach\n");
+        return;
+    }
+
+    int dir_size = 1 << ht->global_depth;
+
+    for (int i = 0; i < dir_size; i++) {
+        bucket *b = ht->directory[i];
+        if (b == NULL) continue;
+
+        bool already_processed = false;
+        for (int j = 0; j < i; j++) {
+            if (ht->directory[j] == b) {
+                already_processed = true;
+                break;
+            }
+        }
+
+        if (already_processed) {
+            continue;
+        }
+
+        for (uint32_t k = 0; k < ht->bucket_size; k++) {
+            if (b->records[k].is_occupied) {
+                aux(b->records[k].data, aux_data);
+            }
+        }
+    }
+}
+
+void hashDestroy(Hash h)
+{
+    hashtable *ht = (hashtable*)h;
+    if (ht == NULL) return;
+
+    int dir_size = 1 << ht->global_depth;
+
+    for (int i = 0; i < dir_size; i++) {
+        bucket *b = ht->directory[i];
+        if (b == NULL) continue;
+
+        bool already_freed = false;
+        for (int j = 0; j < i; j++) {
+            if (ht->directory[j] == b) {
+                already_freed = true;
+                break;
+            }
+        }
+
+        if (already_freed) {
+            continue;
+        }
+
+        if (b->records != NULL) {
+            free(b->records);
+        }
+
+        free(b);
+    }
+
+    if (ht->directory != NULL) {
+        free(ht->directory);
+    }
+
+    free(ht);
 }
