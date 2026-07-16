@@ -197,3 +197,35 @@ bool hashAdd(Hash h, void *data, const char* key)
         }
     }
 }
+
+void *hashRemove(Hash h, const char* key) {
+    hashtable *ht = (hashtable*)h;
+    
+    // 1. Validações de segurança
+    if (ht == NULL || key == NULL) {
+        return NULL;
+    }
+
+    uint32_t hash_val = hashString(key);
+
+    uint32_t index = hash_val & ((1 << ht->global_depth) - 1);
+    bucket *b = ht->directory[index];
+
+    for (uint32_t i = 0; i < ht->bucket_size; i++) {
+        if (b->records[i].is_occupied && strcmp(b->records[i].key, key) == 0) {
+            
+            void *data_to_return = b->records[i].data;
+
+            b->records[i].is_occupied = false;
+            b->records[i].data = NULL; // Limpeza por segurança
+            
+            b->records[i].key[0] = '\0'; 
+
+            b->record_count--;
+
+            return data_to_return;
+        }
+    }
+
+    return NULL;
+}
