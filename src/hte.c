@@ -111,9 +111,14 @@ static void splitBucket(hashtable *ht, uint32_t dir_index)
 
 Hash hashCreate(uint32_t bucket_size)
 {
+    if (bucket_size == 0) {
+        printf("Erro: bucket_size deve ser maior que zero em hashCreate\n");
+        return NULL;
+    }
+
     hashtable *h = malloc(sizeof(hashtable));
     if(h == NULL){
-        printf("Erro: falha ao alocar memoria em ashCreate\n");
+        printf("Erro: falha ao alocar memoria em hashCreate\n");
         return NULL;
     }
 
@@ -168,6 +173,10 @@ bool hashAdd(Hash h, void *data, const char* key)
         printf("Erro: chave e/ou data  nulo(s) em hashAdd\n");
         return false;
     }
+    if (strlen(key) >= MAX_KEY_LENGTH) {
+        printf("Erro: chave excede o tamanho maximo de %d caracteres em hashAdd\n", MAX_KEY_LENGTH - 1);
+        return false;
+    }
 
     uint32_t hash_val = hashString(key);
 
@@ -177,7 +186,7 @@ bool hashAdd(Hash h, void *data, const char* key)
 
         for (uint32_t i = 0; i < ht->bucket_size; i++) {
             if (b->records[i].is_occupied && strcmp(b->records[i].key, key) == 0) {
-                printf("Erro: tentativa de insercao com chave duplicada em hashAdd");
+                printf("Erro: tentativa de insercao com chave duplicada em hashAdd\n");
                 return false;
             }
         }
@@ -195,7 +204,10 @@ bool hashAdd(Hash h, void *data, const char* key)
                 }
             }
         } else {
-            splitBucket(ht, index);
+            if (!splitBucket(ht, index)) {
+                printf("Erro: falha ao expandir bucket em hashAdd\n");
+                return false;
+            }
             ht->total_expansions++;
         }
     }
