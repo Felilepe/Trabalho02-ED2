@@ -24,6 +24,7 @@ typedef struct {
     int global_depth;
     uint32_t bucket_size;
     int total_expansions;
+    uint32_t total_elements;
     bucket **directory;
 
 } hashtable;
@@ -119,6 +120,7 @@ Hash hashCreate(uint32_t bucket_size)
     h -> bucket_size = bucket_size;
     h -> global_depth = 0;
     h -> total_expansions = 0;
+    h -> total_elements = 0;
     h->directory = malloc(sizeof(bucket*) * 1);
     if (h->directory == NULL) {
         printf("Erro: falha ao alocar memoria para diretorio em hashCreate\n");
@@ -188,6 +190,7 @@ bool hashAdd(Hash h, void *data, const char* key)
                     b->records[i].data = data;
                     b->records[i].is_occupied = true;
                     b->record_count++;
+                    ht -> total_elements++;
                     return true;
                 }
             }
@@ -202,7 +205,7 @@ void *hashRemove(Hash h, const char* key) {
     hashtable *ht = (hashtable*)h;
     
     if (ht == NULL || key == NULL) {
-        printf("Erro: ponteiro para hash table nulo em HashRemove\n");
+        printf("Erro: ponteiro para hash table e/ou chave nulo(s) em HashRemove\n");
         return NULL;
     }
 
@@ -222,6 +225,7 @@ void *hashRemove(Hash h, const char* key) {
             b->records[i].key[0] = '\0'; 
 
             b->record_count--;
+            ht -> total_elements--;
 
             return data_to_return;
         }
@@ -258,7 +262,7 @@ void *hashGetData(Hash h, const char* key)
     hashtable *ht = (hashtable*)h;
     
     if (ht == NULL || key == NULL) {
-        printf("Erro: ponteiro para hash table nulo em HashGetData\n");
+        printf("Erro: ponteiro para hash table e/ou chave nulo(s) em HashGetData\n");
         return NULL;
     }
 
@@ -276,3 +280,12 @@ void *hashGetData(Hash h, const char* key)
     return NULL;
 }
 
+int hashGetSize(Hash h)
+{
+    if(h == NULL){
+        printf("Erro: ponteiro para hash table nulo em hashGetSize");
+        return -1;
+    }
+
+    return (((hashtable*)h) ->total_elements);
+}
