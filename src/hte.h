@@ -16,7 +16,7 @@ bool hashAdd(Hash h, void *data, const char* key);
 /*Recebe uma chave e a remove da hash table, retornando o arquivo atribuido*/
 void *hashRemove(Hash h, const char* key);
 
-/*Verifica se uma chave está contida em uma tabela hash. Retorna a data armazenada se existe ou NULL se não existe*/
+/*Verifica se uma chave está contida em uma tabela hash. Retorna valor booleano*/
 bool hashExists(Hash h, const char* key);
 
 /*Recebe uma chave e retorna o arquivo atribuido*/
@@ -24,9 +24,6 @@ void *hashGetData(Hash h, const char* key);
 
 /*Recebe uma hash table e retorna o tamanho*/
 int hashGetSize(Hash h);
-
-/*Recebe uma hash table e imprime todos os seus itens*/
-void hashPrint(Hash h);
 
 bool hashUpdate(Hash h, const char* key, const void* new_data);
 
