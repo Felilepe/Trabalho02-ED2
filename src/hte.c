@@ -41,7 +41,7 @@ static uint32_t hashString(const char* str)
     return hash;
 }
 
-static void splitBucket(hashtable *ht, uint32_t dir_index) 
+static bool splitBucket(hashtable *ht, uint32_t dir_index) 
 {
     bucket *old_bucket = ht->directory[dir_index];
     
@@ -49,7 +49,12 @@ static void splitBucket(hashtable *ht, uint32_t dir_index)
         int old_capacity = 1 << ht->global_depth;
         int new_capacity = 1 << (ht->global_depth + 1);
         
-        ht->directory = realloc(ht->directory, sizeof(bucket*) * new_capacity);
+        bucket **new_directory = realloc(ht->directory, sizeof(bucket*) * new_capacity);
+        if (new_directory == NULL) {
+            printf("Erro: falha ao realocar diretorio em splitBucket\n");
+            return false;
+        }
+        ht->directory = new_directory;
         
         for (int i = 0; i < old_capacity; i++) {
             ht->directory[i + old_capacity] = ht->directory[i];
@@ -59,9 +64,20 @@ static void splitBucket(hashtable *ht, uint32_t dir_index)
     }
 
     bucket *new_bucket = malloc(sizeof(bucket));
+    if (new_bucket == NULL) {
+        printf("Erro: falha ao alocar novo bucket em splitBucket\n");
+        return false;
+    }
+
+    new_bucket->records = malloc(sizeof(record) * ht->bucket_size);
+    if (new_bucket->records == NULL) {
+        printf("Erro: falha ao alocar records do novo bucket em splitBucket\n");
+        free(new_bucket);
+        return false;
+    }
+
     new_bucket->local_depth = old_bucket->local_depth + 1;
     new_bucket->record_count = 0;
-    new_bucket->records = malloc(sizeof(record) * ht->bucket_size);
     for (uint32_t i = 0; i < ht->bucket_size; i++) {
         new_bucket->records[i].is_occupied = false;
     }
@@ -80,6 +96,19 @@ static void splitBucket(hashtable *ht, uint32_t dir_index)
     }
 
     record *temp_records = malloc(sizeof(record) * ht->bucket_size);
+    if (temp_records == NULL) {
+        printf("Erro: falha ao alocar buffer temporario em splitBucket\n");
+        /* desfaz a redistribuicao de ponteiros do diretorio antes de sair */
+        for (int i = 0; i < dir_size; i++) {
+            if (ht->directory[i] == new_bucket) {
+                ht->directory[i] = old_bucket;
+            }
+        }
+        old_bucket->local_depth--;
+        free(new_bucket->records);
+        free(new_bucket);
+        return false;
+    }
     memcpy(temp_records, old_bucket->records, sizeof(record) * ht->bucket_size);
     
     old_bucket->record_count = 0;
@@ -105,6 +134,7 @@ static void splitBucket(hashtable *ht, uint32_t dir_index)
     }
     
     free(temp_records);
+    return true;
 }
 
 
@@ -173,10 +203,6 @@ bool hashAdd(Hash h, void *data, const char* key)
         printf("Erro: chave e/ou data  nulo(s) em hashAdd\n");
         return false;
     }
-    if (strlen(key) >= MAX_KEY_LENGTH) {
-        printf("Erro: chave excede o tamanho maximo de %d caracteres em hashAdd\n", MAX_KEY_LENGTH - 1);
-        return false;
-    }
 
     uint32_t hash_val = hashString(key);
 
@@ -186,7 +212,7 @@ bool hashAdd(Hash h, void *data, const char* key)
 
         for (uint32_t i = 0; i < ht->bucket_size; i++) {
             if (b->records[i].is_occupied && strcmp(b->records[i].key, key) == 0) {
-                printf("Erro: tentativa de insercao com chave duplicada em hashAdd\n");
+                printf("Erro: tentativa de insercao com chave duplicada em hashAdd");
                 return false;
             }
         }
@@ -204,10 +230,7 @@ bool hashAdd(Hash h, void *data, const char* key)
                 }
             }
         } else {
-            if (!splitBucket(ht, index)) {
-                printf("Erro: falha ao expandir bucket em hashAdd\n");
-                return false;
-            }
+            splitBucket(ht, index);
             ht->total_expansions++;
         }
     }
@@ -366,7 +389,7 @@ void hashDestroy(Hash h)
 {
     hashtable *ht = (hashtable*)h;
     if (ht == NULL) return;
-
+git
     int dir_size = 1 << ht->global_depth;
 
     for (int i = 0; i < dir_size; i++) {
